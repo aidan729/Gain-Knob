@@ -69,58 +69,61 @@ impl Plugin for GainKnob {
 
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         Some(Box::new(
-            SlintEditor::with_factory(
-                || gui::AppWindow::new(),
-                (300, 360),
-            )
-            .with_event_loop({
-                let params = self.params.clone();
+            SlintEditor::with_factory(|| gui::AppWindow::new(), (300, 360))
+                .with_setup({
+                    let params = self.params.clone();
 
-                move |window_handler, _setter, _window| {
-                    let component = window_handler.component();
-
-                    // Plugin -> UI: sync gain knob position
-                    let normalized = params.gain.unmodulated_normalized_value();
-                    component.set_gain_value(normalized);
-
-                    // Plugin -> UI: format dB string for readout
-                    let db = util::gain_to_db(params.gain.unmodulated_plain_value());
-                    let db_str = if db <= -59.0 {
-                        "-inf dB".into()
-                    } else {
-                        format!("{:.1} dB", db)
-                    };
-                    component.set_gain_db(db_str.into());
-
-                    // UI -> Plugin: knob drag callbacks
-                    {
-                        let params_clone = params.clone();
+                    move |window_handler, _window| {
+                        let component = window_handler.component();
                         let context = window_handler.context().clone();
-                        component.on_gain_begin_drag(move || {
-                            let setter = ParamSetter::new(&*context);
-                            setter.begin_set_parameter(&params_clone.gain);
-                        });
-                    }
 
-                    {
-                        let params_clone = params.clone();
-                        let context = window_handler.context().clone();
-                        component.on_gain_changed(move |value| {
-                            let setter = ParamSetter::new(&*context);
-                            setter.set_parameter_normalized(&params_clone.gain, value);
-                        });
-                    }
+                        // UI -> Plugin: knob drag callbacks (registered once on open)
+                        {
+                            let params = params.clone();
+                            let context = context.clone();
+                            component.on_gain_begin_drag(move || {
+                                let setter = ParamSetter::new(&*context);
+                                setter.begin_set_parameter(&params.gain);
+                            });
+                        }
 
-                    {
-                        let params_clone = params.clone();
-                        let context = window_handler.context().clone();
-                        component.on_gain_end_drag(move || {
-                            let setter = ParamSetter::new(&*context);
-                            setter.end_set_parameter(&params_clone.gain);
-                        });
+                        {
+                            let params = params.clone();
+                            let context = context.clone();
+                            component.on_gain_changed(move |value| {
+                                let setter = ParamSetter::new(&*context);
+                                setter.set_parameter_normalized(&params.gain, value);
+                            });
+                        }
+
+                        {
+                            let params = params.clone();
+                            component.on_gain_end_drag(move || {
+                                let setter = ParamSetter::new(&*context);
+                                setter.end_set_parameter(&params.gain);
+                            });
+                        }
                     }
-                }
-            }),
+                })
+                .with_event_loop({
+                    let params = self.params.clone();
+
+                    move |window_handler, _setter, _window| {
+                        let component = window_handler.component();
+
+                        // Plugin -> UI: sync gain knob position
+                        component.set_gain_value(params.gain.unmodulated_normalized_value());
+
+                        // Plugin -> UI: format dB string for readout
+                        let db = util::gain_to_db(params.gain.unmodulated_plain_value());
+                        let db_str = if db <= -59.0 {
+                            "-inf dB".into()
+                        } else {
+                            format!("{:.1} dB", db)
+                        };
+                        component.set_gain_db(db_str.into());
+                    }
+                }),
         ))
     }
 
