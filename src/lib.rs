@@ -50,13 +50,11 @@ impl Plugin for GainKnob {
 
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-    const AUDIO_IO_LAYOUTS: &'static [AudioIOLayout] = &[
-        AudioIOLayout {
-            main_input_channels: NonZeroU32::new(2),
-            main_output_channels: NonZeroU32::new(2),
-            ..AudioIOLayout::const_default()
-        },
-    ];
+    const AUDIO_IO_LAYOUTS: &'static [AudioIOLayout] = &[AudioIOLayout {
+        main_input_channels: NonZeroU32::new(2),
+        main_output_channels: NonZeroU32::new(2),
+        ..AudioIOLayout::const_default()
+    }];
 
     const SAMPLE_ACCURATE_AUTOMATION: bool = true;
 
@@ -98,6 +96,19 @@ impl Plugin for GainKnob {
 
                         {
                             let params = params.clone();
+                            let context = context.clone();
+                            component.on_gain_changed_from_string(move |value| {
+                                let setter = ParamSetter::new(&*context);
+                                let normalized_value =
+                                    params.gain.string_to_normalized_value(&value);
+                                if let Some(normalized_value) = normalized_value {
+                                    setter.set_parameter_normalized(&params.gain, normalized_value);
+                                }
+                            });
+                        }
+
+                        {
+                            let params = params.clone();
                             component.on_gain_end_drag(move || {
                                 let setter = ParamSetter::new(&*context);
                                 setter.end_set_parameter(&params.gain);
@@ -111,17 +122,24 @@ impl Plugin for GainKnob {
                     move |window_handler, _setter, _window| {
                         let component = window_handler.component();
 
+                        // Pass the keyboard_input_is_enabled state to the window handler
+                        window_handler.set_keyboard_input_is_enabled(
+                            component.get_keyboard_input_is_enabled(),
+                        );
+
                         // Plugin -> UI: sync gain knob position
                         component.set_gain_value(params.gain.unmodulated_normalized_value());
 
                         // Plugin -> UI: format dB string for readout
-                        let db = util::gain_to_db(params.gain.unmodulated_plain_value());
-                        let db_str = if db <= -59.0 {
-                            "-inf dB".into()
-                        } else {
-                            format!("{:.1} dB", db)
-                        };
-                        component.set_gain_db(db_str.into());
+                        component.set_gain_db(
+                            params
+                                .gain
+                                .normalized_value_to_string(
+                                    params.gain.unmodulated_normalized_value(),
+                                    true,
+                                )
+                                .into(),
+                        );
                     }
                 }),
         ))

@@ -1,4 +1,6 @@
 import { Knob } from "DSL/knob.slint";
+import { TextInput } from "DSL/text-input.slint";
+import { KeyboardState } from "globals.slint";
 
 export component AppWindow inherits Window {
     preferred-width: 300px;
@@ -13,7 +15,11 @@ export component AppWindow inherits Window {
     // dB display string pushed from Rust each frame
     in-out property <string> gain-db: "0.0 dB";
 
+    // Enable keyboard input if you want the plugin to consume the key events
+    in-out property <bool> keyboard_input_is_enabled: KeyboardState.keyboard_input_is_enabled;
+
     callback gain-changed(float);
+    callback gain-changed-from-string(string);
     callback gain-begin-drag();
     callback gain-end-drag();
 
@@ -73,12 +79,14 @@ export component AppWindow inherits Window {
         Rectangle { height: 20px * root.scale; }
 
         // dB readout
-        Text {
+        TextInput {
             text: root.gain-db;
-            color: #06b6d4;
-            font-size: 18px * root.scale;
-            font-weight: 600;
-            horizontal-alignment: center;
+
+            changed(value) => {
+                root.gain-begin-drag();
+                root.gain-changed-from-string(value);
+                root.gain-end-drag();
+            }
         }
 
         Rectangle { height: 4px * root.scale; }

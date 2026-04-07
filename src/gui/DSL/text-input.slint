@@ -1,0 +1,58 @@
+import { KeyboardState } from "../globals.slint";
+
+export component TextInput inherits Rectangle {
+    in property <string> text;
+    in property <float> scale: 1.;
+    property <bool> is_in_edit_mode: false;
+    callback changed(string);
+
+    input := TextInput {
+        text: root.text;
+        color: #06b6d4;
+        font-size: 18px * root.scale;
+        font-weight: 600;
+        horizontal-alignment: center;
+        input-type: decimal;
+        visible: root.is_in_edit_mode;
+
+        key-pressed(event) => {
+            if event.text == Key.Escape {
+                root.is_in_edit_mode = false;
+                self.clear-focus();
+                return EventResult.accept;
+            }
+            return EventResult.reject;
+        }
+
+        accepted() => {
+            root.changed(self.text);
+            root.is_in_edit_mode = false;
+        }
+
+        changed has-focus => {
+            if (self.has-focus) {
+                KeyboardState.focus_count += 1;
+            } else {
+                KeyboardState.focus_count = max(0, KeyboardState.focus_count - 1);
+            }
+        }
+    } 
+
+    Text {
+        text: root.text;
+        color: #06b6d4;
+        font-size: 18px * root.scale;
+        font-weight: 600;
+        horizontal-alignment: center;
+        visible: !root.is_in_edit_mode;
+
+        TouchArea {
+            clicked => {
+                root.is_in_edit_mode = true;
+                input.focus();
+                input.select-all();
+                input.cut();
+            }
+        }
+    }
+}
