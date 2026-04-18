@@ -1,11 +1,14 @@
 use nih_plug::prelude::*;
-use nih_plug_slint::SlintEditor;
+use nih_plug_slint::{SlintEditor, SlintEditorState};
 use std::sync::Arc;
 
 mod gui;
 
 #[derive(Params)]
 pub struct GainKnobParams {
+    #[persist = "editor-state"]
+    pub editor_state: Arc<SlintEditorState>,
+
     #[id = "gain"]
     pub gain: FloatParam,
 }
@@ -13,6 +16,7 @@ pub struct GainKnobParams {
 impl Default for GainKnobParams {
     fn default() -> Self {
         Self {
+            editor_state: Arc::new(SlintEditorState::new(300, 360)),
             gain: FloatParam::new(
                 "Gain",
                 util::db_to_gain(0.0),
@@ -67,7 +71,7 @@ impl Plugin for GainKnob {
 
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         Some(Box::new(
-            SlintEditor::with_factory(|| gui::AppWindow::new(), (300, 360))
+            SlintEditor::new(self.params.editor_state.clone(), || gui::AppWindow::new())
                 .with_setup({
                     let params = self.params.clone();
 
