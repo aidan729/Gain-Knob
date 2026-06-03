@@ -1,5 +1,5 @@
-use nih_plug::prelude::*;
-use nih_plug_slint::SlintEditor;
+use nice_plug::prelude::*;
+use nice_plug_slint::{SlintEditor, SlintEditorState};
 use std::sync::Arc;
 
 mod gui;
@@ -8,11 +8,16 @@ mod gui;
 pub struct GainKnobParams {
     #[id = "gain"]
     pub gain: FloatParam,
+
+    #[persist = "editor-state"]
+    pub editor_state: Arc<SlintEditorState>,
 }
 
 impl Default for GainKnobParams {
     fn default() -> Self {
         Self {
+            editor_state: Arc::new(SlintEditorState::new(300, 360)),
+
             gain: FloatParam::new(
                 "Gain",
                 util::db_to_gain(0.0),
@@ -69,7 +74,7 @@ impl Plugin for GainKnob {
 
     fn editor(&mut self, _async_executor: AsyncExecutor<Self>) -> Option<Box<dyn Editor>> {
         Some(Box::new(
-            SlintEditor::with_factory(|| gui::AppWindow::new(), (300, 360))
+            SlintEditor::new(self.params.editor_state.clone(), || gui::AppWindow::new())
                 .with_setup({
                     let params = self.params.clone();
 
@@ -162,5 +167,5 @@ impl Vst3Plugin for GainKnob {
         &[Vst3SubCategory::Fx, Vst3SubCategory::Tools];
 }
 
-nih_export_clap!(GainKnob);
-nih_export_vst3!(GainKnob);
+nice_export_clap!(GainKnob);
+nice_export_vst3!(GainKnob);

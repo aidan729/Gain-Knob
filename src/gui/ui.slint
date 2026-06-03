@@ -21,13 +21,60 @@ export component AppWindow inherits Window {
 
     background: #141414;
 
-    VerticalLayout {
-        padding: 32px * root.scale;
-        spacing: 0px;
-        alignment: center;
+    // The UI scales with the window. `scale` is derived from root.width/height,
+    // so the scaled child sizes must NOT feed back into the window's reported
+    // size — otherwise Slint reports a binding loop:
+    //   scale -> font-size -> layoutinfo -> root.layoutinfo -> root.height -> scale
+    //
+    // A `*Layout` (VerticalLayout/HorizontalLayout) aggregates its children's
+    // sizes into its own layoutinfo, which is exactly the feedback edge that
+    // closes the loop. To break it, we lay everything out *manually* inside a
+    // plain Rectangle sized to the window: a Rectangle does not compute its
+    // layoutinfo from its children, so the scaled sizes never propagate back up
+    // to the window and the cycle is severed. The window's actual size is driven
+    // externally by baseview/nice-plug-slint from SlintEditorState, so we lose
+    // nothing by not sizing-to-content here.
+    Rectangle {
+        width: root.width;
+        height: root.height;
+        clip: true;
+
+        // Vertical layout is reconstructed by hand. We compute a content block
+        // height from the scaled pieces and centre it vertically, mirroring the
+        // old `VerticalLayout { alignment: center }` look.
+        property <length> pad: 32px * root.scale;
+        property <length> knob-size: 180px * root.scale;
+
+        // Stacked content height (header + divider + gaps + knob + readout +
+        // label + vendor), used only to centre the block — it is a plain value,
+        // not a layout constraint, so it does not feed back into the window.
+        property <length> content-h:
+            16px * root.scale            // header text
+            + 12px * root.scale          // gap
+            + 1px                        // divider
+            + 28px * root.scale          // gap
+            + self.knob-size             // knob
+            + 20px * root.scale          // gap
+            + 22px * root.scale          // dB readout
+            + 4px * root.scale           // gap
+            + 13px * root.scale          // OUTPUT GAIN label
+            + 20px * root.scale          // gap
+            + 11px * root.scale;         // vendor tag
+
+        property <length> top: (root.height - self.content-h) / 2;
+
+        // Running y-cursor for manual stacking
+        property <length> y-header: self.top;
+        property <length> y-divider: self.y-header + 16px * root.scale + 12px * root.scale;
+        property <length> y-knob: self.y-divider + 1px + 28px * root.scale;
+        property <length> y-readout: self.y-knob + self.knob-size + 20px * root.scale;
+        property <length> y-label: self.y-readout + 22px * root.scale + 4px * root.scale;
+        property <length> y-vendor: self.y-label + 13px * root.scale + 20px * root.scale;
 
         // Plugin name header
         Text {
+            x: (parent.width - self.width) / 2;
+            y: parent.y-header;
             text: "GAIN";
             color: #ffffff;
             font-size: 13px * root.scale;
@@ -38,42 +85,38 @@ export component AppWindow inherits Window {
 
         // Subtle divider
         Rectangle {
+            x: (parent.width - self.width) / 2;
+            y: parent.y-divider;
             height: 1px;
             width: 40px * root.scale;
             background: #2a2a2a;
-            // centre it manually
-            x: (parent.width - self.width) / 2;
         }
 
-        Rectangle { height: 28px * root.scale; }
+        // The knob — centred horizontally
+        Knob {
+            x: (parent.width - self.width) / 2;
+            y: parent.y-knob;
+            width: parent.knob-size;
+            height: parent.knob-size;
+            value <=> root.gain-value;
+            minimum: 0.0;
+            maximum: 1.0;
 
-        // The knob — centred
-        HorizontalLayout {
-            alignment: center;
-
-            Knob {
-                width: 180px * root.scale;
-                height: 180px * root.scale;
-                value <=> root.gain-value;
-                minimum: 0.0;
-                maximum: 1.0;
-
-                changed(v) => {
-                    root.gain-changed(v);
-                }
-                begin-drag() => {
-                    root.gain-begin-drag();
-                }
-                end-drag() => {
-                    root.gain-end-drag();
-                }
+            changed(v) => {
+                root.gain-changed(v);
+            }
+            begin-drag() => {
+                root.gain-begin-drag();
+            }
+            end-drag() => {
+                root.gain-end-drag();
             }
         }
 
-        Rectangle { height: 20px * root.scale; }
-
         // dB readout
         Text {
+            x: (parent.width - self.width) / 2;
+            y: parent.y-readout;
             text: root.gain-db;
             color: #06b6d4;
             font-size: 18px * root.scale;
@@ -81,10 +124,10 @@ export component AppWindow inherits Window {
             horizontal-alignment: center;
         }
 
-        Rectangle { height: 4px * root.scale; }
-
-        // "GAIN" label below readout
+        // "OUTPUT GAIN" label below readout
         Text {
+            x: (parent.width - self.width) / 2;
+            y: parent.y-label;
             text: "OUTPUT GAIN";
             color: #555555;
             font-size: 10px * root.scale;
@@ -93,10 +136,10 @@ export component AppWindow inherits Window {
             horizontal-alignment: center;
         }
 
-        Rectangle { height: 20px * root.scale; }
-
         // Vendor tag
         Text {
+            x: (parent.width - self.width) / 2;
+            y: parent.y-vendor;
             text: "ADNMRTNS";
             color: #333333;
             font-size: 9px * root.scale;

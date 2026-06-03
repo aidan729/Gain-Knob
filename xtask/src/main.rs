@@ -1,5 +1,5 @@
-use nih_plug_xtask;
+use nice_plug_xtask;
 
-fn main() -> nih_plug_xtask::Result<()> {
-    nih_plug_xtask::main()
+fn main() -> nice_plug_xtask::Result<()> {
+    nice_plug_xtask::main()
 }

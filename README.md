@@ -1,6 +1,6 @@
 # gain-knob
 
-An example VST3/CLAP plugin demonstrating how to use [nih-plug-slint](../nih-plug-slint) to build a native Slint GUI for a [NIH-plug](https://github.com/robbert-vdh/nih-plug) audio plugin.
+An example VST3/CLAP plugin demonstrating how to use [nice-plug-slint](https://github.com/aidan729/nice-plug-slint) to build a native Slint GUI for a [nice-plug](https://codeberg.org/RustAudio/nice-plug) audio plugin.
 
 ## What it does
 
@@ -27,9 +27,9 @@ gain-knob/
 │       └── DSL/
 │           └── knob.slint  # Reusable knob component
 ├── build.rs            # Compiles Slint UI
-└── xtask/              # NIH-plug bundler
+└── xtask/              # nice-plug bundler
 ```
 
-## Using nih-plug-slint
+## Using nice-plug-slint
 
-See [nih-plug-slint](../nih-plug-slint) for the full API reference and documentation.
+See [nice-plug-slint](https://github.com/aidan729/nice-plug-slint) for the full API reference and documentation.

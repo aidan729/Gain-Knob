@@ -11,11 +11,11 @@ name = "gain_knob"
 crate-type = ["cdylib"]
 
 [build-dependencies]
-slint-build = "=1.15.1"
+slint-build = "=1.16.1"
 
 [dependencies]
-nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git" }
-nih_plug_xtask = { git = "https://github.com/robbert-vdh/nih-plug.git" }
-nih_plug_slint = { git = "https://github.com/aidan729/nih-plug-slint" }
-slint = { version = "=1.15.1", default-features = false, features = ["std", "renderer-femtovg", "raw-window-handle-06", "compat-1-2"] }
+nice-plug = { git = "https://codeberg.org/RustAudio/nice-plug" }
+nice-plug-xtask = { git = "https://codeberg.org/RustAudio/nice-plug" }
+nice_plug_slint = { git = "https://github.com/aidan729/nice-plug-slint" }
+slint = { version = "=1.16.1", default-features = false, features = ["std", "renderer-femtovg", "raw-window-handle-06", "compat-1-2"] }
 serde = { version = "1.0", features = ["derive"] }
