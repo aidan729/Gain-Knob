@@ -2,6 +2,8 @@
 
 An example VST3/CLAP plugin demonstrating how to use [nice-plug-slint](https://github.com/aidan729/nice-plug-slint) to build a native Slint GUI for a [nice-plug](https://codeberg.org/RustAudio/nice-plug) audio plugin.
 
+![gain-vst](assets/image.png)
+
 ## What it does
 
 A single-knob gain plugin (-60 dB to +6 dB) with a clean, GPU-accelerated UI built entirely in Slint.
